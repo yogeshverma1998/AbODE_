@@ -10,7 +10,8 @@ Evaluation and pre-trained models.
 - torch-cluster 
 - torch-spline-conv 
 - torch-geometric 
-
+- astropy
+- networkx
 
 
 ## Datasets
