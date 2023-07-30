@@ -9,7 +9,6 @@ import pandas as pd
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
-from pysmiles import read_smiles
 import matplotlib 
 from torch_geometric.data import Data
 from torchdiffeq import odeint as odeint
