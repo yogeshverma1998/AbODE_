@@ -630,7 +630,7 @@ def loss_function_vm_with_side_chains(y_pred,y_true):
 
 
 
-def loss_function_vm_with_side_chains_angle(y_pred,y_true,batch):
+def loss_function_vm_with_side_chains_angle(y_pred,y_true):
     
     kappa = 10
     pred_labels = y_pred[:,:20].view(-1,20).to(y_pred.device)
@@ -645,10 +645,6 @@ def loss_function_vm_with_side_chains_angle(y_pred,y_true,batch):
     pred_r = pred_coords[:,:,:1].reshape(-1,1).to(y_pred.device)
     true_r = true_coords[:,:,:1].reshape(-1,1).to(y_pred.device)
     
-    #print(pred_r,true_r)
-    #r_loss = nn.MSELoss(reduction='mean')
-    #loss_val = r_loss(pred_r,true_r)
-    
     pred_angle = pred_coords[:,:,1:3].reshape(-1,2).to(y_pred.device)
     true_angle = true_coords[:,:,1:3].reshape(-1,2).to(y_pred.device)
     
@@ -656,10 +652,6 @@ def loss_function_vm_with_side_chains_angle(y_pred,y_true,batch):
     m = torch.distributions.von_mises.VonMises(torch.tensor([0]).to(y_pred.device), torch.tensor([kappa]).to(y_pred.device))
     nll = - m.log_prob(diff_angle).view(-1,2)
     total_angle_loss = torch.mean(nll,dim=0).sum()
-    
-    
-    #r_loss = nn.SmoothL1Loss(reduction='mean')
-    #loss_val = r_loss(pred_r,true_r)
     
     normal_lkl = torch.distributions.normal.Normal(torch.tensor([0]).to(y_pred.device), torch.tensor([0.314]).to(y_pred.device))
     r_diff = pred_r - true_r
