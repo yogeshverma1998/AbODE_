@@ -12,6 +12,8 @@ Evaluation and pre-trained models.
 - torch-geometric 
 - astropy
 - networkx
+- tqdm
+- Biopython
 
 
 ## Datasets
