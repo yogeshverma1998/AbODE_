@@ -9,12 +9,11 @@ Evaluation and pre-trained models.
 - torch-sparse 
 - torch-cluster 
 - torch-spline-conv 
-- torch-geometric 
+- torch-geometric == 2.0.4
 - astropy
 - networkx
 - tqdm
 - Biopython
-
 
 ## Datasets
 Datasets are placed in "data/" folder. Note that [Structural Antibody Dataset](https://opig.stats.ox.ac.uk/webapps/sabdab-sabpred/sabdab) is an evolutionaey dataset in which new structures are added each week. The model has been evaluated on a same specification as other competing methods in benchmarks.
