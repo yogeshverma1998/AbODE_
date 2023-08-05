@@ -630,14 +630,14 @@ def loss_function_vm_with_side_chains(y_pred,y_true):
 
 
 
-def loss_function_vm_with_side_chains_angle(y_pred,y_true):
+def loss_function_vm_with_side_chains_angle(y_pred,y_true,batch):
     
     kappa = 10
     pred_labels = y_pred[:,:20].view(-1,20).to(y_pred.device)
     truth_labels = y_true[:,:20].view(-1,20).to(y_pred.device)
     
-    celoss = nn.CrossEntropyLoss(reduction='mean')
-    loss_ce = celoss(pred_labels,truth_labels)
+    celoss = nn.CrossEntropyLoss(reduction='sum')
+    loss_ce = celoss(pred_labels,truth_labels)/batch
 
     pred_coords = y_pred[:,20:29].view(-1,3,3).to(y_pred.device)
     true_coords = y_true[:,20:29].view(-1,3,3).to(y_pred.device)
