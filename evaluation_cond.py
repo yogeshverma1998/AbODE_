@@ -41,14 +41,14 @@ device = torch.device('cuda:' + str(args.gpu) if torch.cuda.is_available() else 
 
 test_path = str(cwd) + "/data/sabdab_new/cdrh"+ str(args.cdr) + "/test.json"
 
-model = torch.load(str(cwd) + "/checkpoints/Abode_cond_cdrh"+str(args.cdr)+".pt")
+model = torch.load(str(cwd) + "/checkpoints/Abode_cond_cdrh"+str(args.cdr)+".pt") # loading the saved model
 t_begin=0.
 t_end=1
 t_nsamples=200
-t_space = np.linspace(t_begin, t_end, t_nsamples)
+t_space = np.linspace(t_begin, t_end, t_nsamples) # time-steps for the ODE function
 print("################# Region given is CDR",args.cdr," ###############")
 print("############################ Data is loading ###########################")
-Test_data = get_graph_data_polar_with_sidechains_angle(args.cdr,test_path,args.mask)
+Test_data = get_graph_data_polar_with_sidechains_angle(args.cdr,test_path,args.mask) # loading the dataset 
 Test_loader = DataLoader(Test_data, batch_size=1, shuffle=False,num_workers=0)
 
 model.eval()
@@ -81,8 +81,8 @@ for idx,batch in enumerate(Test_loader):
                model, data, t, method=args.solver, 
                 rtol=args.rtol, atol=args.atol,
                 options=options
-            )
-            #print("Final_output",y_pd[-1])
+            ) # The ODE-function to solve the ODE-system
+            
             y_gt = batch.y.to(device)
             antigen_len = []
             for entry in batch.ag_len.numpy().tolist():
@@ -92,8 +92,8 @@ for idx,batch in enumerate(Test_loader):
             for entry in batch.ab_len.numpy().tolist():
                 antibody_len.append(entry[0])
                 
-            final_pred = get_antibody_entries(y_pd[-1],batch.batch,antibody_len,antigen_len)
-            rmsd_n,rmsd_ca,rmsd_c,acc,rmsd_cart_ca = evaluate_rmsd_with_sidechains_cond_angle(final_pred,y_gt,batch.first_res)
+            final_pred = get_antibody_entries(y_pd[-1],batch.batch,antibody_len,antigen_len) # get antibody entries from the total graph
+            rmsd_n,rmsd_ca,rmsd_c,acc,rmsd_cart_ca = evaluate_rmsd_with_sidechains_cond_angle(final_pred,y_gt,batch.first_res) # metric function to calculate the metrics
             ppl_pred.append(acc)
             rmsd_pred.append(rmsd_ca)
             RMSD_test_n.append(rmsd_n)
