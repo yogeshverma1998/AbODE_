@@ -42,15 +42,15 @@ device = torch.device('cuda:' + str(args.gpu) if torch.cuda.is_available() else 
 
 test_path = str(cwd) + "/data/sabdab/hcdr"+ str(args.cdr) + "_cluster/test_data.jsonl"
 
-model = torch.load(str(cwd) + "/checkpoints/Abode_uncond_cdrh"+str(args.cdr)+".pt")
+model = torch.load(str(cwd) + "/checkpoints/Abode_uncond_cdrh"+str(args.cdr)+".pt")  # loading the saved model
 
 t_begin=0.
 t_end=1
 t_nsamples=200
-t_space = np.linspace(t_begin, t_end, t_nsamples)
+t_space = np.linspace(t_begin, t_end, t_nsamples) # time-steps for the ODE function
 print("################# Region given is CDR",args.cdr," ###############")
 print("############################ Data is loading ###########################")
-Test_data= get_graph_data_polar_uncond_with_side_chains_angle(args.cdr,test_path)
+Test_data= get_graph_data_polar_uncond_with_side_chains_angle(args.cdr,test_path) # loading the dataset 
 
 
 ppl_pred = []
@@ -81,10 +81,10 @@ with torch.no_grad():
                    model, data, t, method=args.solver, 
                     rtol=args.rtol, atol=args.atol,
                     options=options
-                )
-                #print("Final_output",y_pd[-1])
+                ) # The ODE-function to solve the ODE-system
+
                 y_gt = batch.y.to(device)
-                rmsd_n,rmsd_ca,rmsd_c,ppl,rmsd_cart_ca = evaluate_rmsd_with_sidechains_angle(data,y_pd[-1],y_gt,batch.first_res)
+                rmsd_n,rmsd_ca,rmsd_c,ppl,rmsd_cart_ca = evaluate_rmsd_with_sidechains_angle(data,y_pd[-1],y_gt,batch.first_res) # function to calculate the metrics
                 ppl_pred.append(ppl)
                 rmsd_pred.append(rmsd_ca)
                 RMSD_test_n.append(rmsd_n)
