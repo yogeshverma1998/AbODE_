@@ -1042,6 +1042,8 @@ def evaluate_rmsd_with_sidechains_angle(y_initial,y_pred,y_truth,first_residue):
     
     pred_labels = y_pred[:,:20].view(-1,20)
     truth_labels = y_truth[:,:20].view(-1,20)
+
+    # Calculating the PPL
     
     celoss = nn.CrossEntropyLoss()
     loss_ce = celoss(pred_labels,truth_labels)
@@ -1051,11 +1053,7 @@ def evaluate_rmsd_with_sidechains_angle(y_initial,y_pred,y_truth,first_residue):
     pred_polar_coord = y_pred[:,20:29].detach().numpy().reshape(-1,3,3)
     truth_polar_coord = y_truth[:,20:29].detach().numpy().reshape(-1,3,3)
     first_residue_coord = first_residue[:,1,:].detach().numpy().reshape(-1,3)
-    #pred_polar_coord[0] = truth_polar_coord[0]
-    #pred_polar_coord[-1] = truth_polar_coord[-1]
     
-    #print(pred_polar_coord)
-    #print(truth_polar_coord)
     rmsd_N = kabsch_rmsd(pred_polar_coord[:][:,0][:],truth_polar_coord[:][:,0][:])
     rmsd_Ca = kabsch_rmsd(pred_polar_coord[:][:,1][:],truth_polar_coord[:][:,1][:])
     rmsd_C = kabsch_rmsd(pred_polar_coord[:][:,2][:],truth_polar_coord[:][:,2][:])
@@ -1075,7 +1073,8 @@ def evaluate_rmsd_with_sidechains_angle(y_initial,y_pred,y_truth,first_residue):
         else:
             C_alpha_pred[entry] =C_alpha_pred[entry] + C_alpha_pred[entry-1]
             C_alpha_truth[entry] = C_alpha_truth[entry] + C_alpha_truth[entry-1]
-    
+
+    # Calculating the Kabsch RMSD with reconstructed features
     rmsd_cart_Ca = kabsch_rmsd(C_alpha_pred,C_alpha_truth)
     
     return rmsd_N,rmsd_Ca,rmsd_C,ppl.item(),rmsd_cart_Ca
@@ -1088,38 +1087,28 @@ def evaluate_rmsd_with_sidechains_cond_angle(y_pred,y_truth,first_residue):
     
     pred_labels = y_pred[:,:20].view(-1,20).detach().cpu()
     truth_labels = y_truth[:,:20].view(-1,20).detach().cpu()
+
+    # Calculating AAR
     
     y_pred_softmax = torch.log_softmax(pred_labels, dim = 1)
     _, y_pred_tags = torch.max(y_pred_softmax, dim = 1) 
     _,y_true = torch.max(truth_labels,dim=1)
-    
-    #print("prediction",pred_labels)
-    #print("truth",truth_labels)
-    #print("y_pred_softmax",y_pred_softmax)
-    #print("y_pred_tags",y_pred_tags)
-    #print("y_true",y_true)
-    
+
     correct_pred = (y_pred_tags == y_true).float()
     acc = correct_pred.sum() / len(correct_pred)
     
-    #initial_polar_coord = y_initial[:,20:29].detach().numpy().reshape(-1,3,3)
+
     pred_polar_coord = y_pred[:,20:29].cpu().detach().numpy().reshape(-1,3,3)
     truth_polar_coord = y_truth[:,20:29].cpu().detach().numpy().reshape(-1,3,3)
     first_residue_coord = first_residue[:,1,:].detach().numpy().reshape(-1,3)
-    
-    #pred_polar_coord[0] = truth_polar_coord[0]
-    #pred_polar_coord[-1] = truth_polar_coord[-1]
-    
-    #print(pred_polar_coord)
-    #print(truth_polar_coord)
+
+    # kabsdh RMSD on positional features
     rmsd_N = kabsch_rmsd(pred_polar_coord[:][:,0][:],truth_polar_coord[:][:,0][:])
     rmsd_Ca = kabsch_rmsd(pred_polar_coord[:][:,1][:],truth_polar_coord[:][:,1][:])
     rmsd_C = kabsch_rmsd(pred_polar_coord[:][:,2][:],truth_polar_coord[:][:,2][:])
     
     
     Cart_pred,Cart_truth = _get_cartesian(torch.tensor(pred_polar_coord).view(-1,9),torch.tensor(truth_polar_coord).view(-1,9))
-    #Cart_pred[0] = Cart_truth[0]
-    #Cart_pred[-1] = Cart_truth[-1]
     
     C_alpha_pred = Cart_pred[:,3:6].numpy()
     C_alpha_truth = Cart_truth[:,3:6].numpy()
@@ -1131,7 +1120,8 @@ def evaluate_rmsd_with_sidechains_cond_angle(y_pred,y_truth,first_residue):
         else:
             C_alpha_pred[entry] =C_alpha_pred[entry] + C_alpha_pred[entry-1]
             C_alpha_truth[entry] = C_alpha_truth[entry] + C_alpha_truth[entry-1]
-    
+
+    # kabsdh RMSD on reconstructed positional features
     rmsd_cart_Ca = kabsch_rmsd(C_alpha_pred[:-1],C_alpha_truth[:-1])
     
     return rmsd_N,rmsd_Ca,rmsd_C,acc,rmsd_cart_Ca
@@ -1346,7 +1336,7 @@ def get_graph_data_polar_uncond_with_side_chains_rolled(cdr_type,file_path):
 
 def get_graph_data_polar_uncond_with_side_chains_angle(cdr_type,file_path):
     
-    Ab_seq,Ab_ang_coord,Ab_euc_coord,Pdb = get_seq_and_coord_uncond(cdr_type,file_path)
+    Ab_seq,Ab_ang_coord,Ab_euc_coord,Pdb = get_seq_and_coord_uncond(cdr_type,file_path) # read the file and give seq and coordinates
     #print(Ab_seq)
     final_data = []
     for entry_number in range(len(Ab_seq)):
@@ -1364,7 +1354,7 @@ def get_graph_data_polar_uncond_with_side_chains_angle(cdr_type,file_path):
         #print(len(antibody_seq))
         antibody_cdr_len = len(antibody_seq)-2
         if antibody_cdr_len<=1: continue
-        for residue in list(antibody_seq[1:-1]):
+        for residue in list(antibody_seq[1:-1]): # One-hot encoded vector for sequence
             hot_encoder = np.zeros(20)
             res_idx = ALPHABET.index(residue)
             hot_encoder[res_idx] = 1
@@ -1392,11 +1382,12 @@ def get_graph_data_polar_uncond_with_side_chains_angle(cdr_type,file_path):
         cross_vector = torch.cross(ab_diff_forward.view(-1,3,3),ab_diff_backward.view(-1,3,3),dim=2).view(-1,3,3)
         
         normal_angle = torch.acos(F.cosine_similarity(cross_vector,ab_diff_backward.view(-1,3,3),dim=2)).view(-1,3,1)
+
         
         
-        antibody_pos_features = torch.cat((r_norm,mid_angle,normal_angle),dim=2).view(-1,9)
+        antibody_pos_features = torch.cat((r_norm,mid_angle,normal_angle),dim=2).view(-1,9) # Quaternion type positional representation, see the paper for equations
         
-        if np.isnan(antibody_pos_features.numpy()).any() == True: continue
+        if np.isnan(antibody_pos_features.numpy()).any() == True: continue # Removing Nan entries
 
         edge_s = []
         edge_f = []
@@ -1409,11 +1400,14 @@ def get_graph_data_polar_uncond_with_side_chains_angle(cdr_type,file_path):
         edges_ab = torch.tensor([edge_s,edge_f])
         
         Final_target_antibody_features = torch.cat([ab_label_features,antibody_pos_features],dim=1)
+
+        # Initialization similar to MEAN Kong et. el, 2022
         
         Input_ab_labels = torch.tensor(float(1/20)*np.ones((antibody_cdr_len,20))).view(-1,20)
         amino_index = torch.tensor([i for i in range(antibody_cdr_len)]).view(-1,1).float()
         temp_coords = antibody_pos_features.view(-1,3,3)
-        #print(temp_coords)
+        
+        
         Input_ab_coords = torch.from_numpy(np.linspace(temp_coords[0].numpy(),temp_coords[-1].numpy(),antibody_cdr_len)).view(-1,9)
         Final_input_anitbody_features = torch.cat([Input_ab_labels,Input_ab_coords],dim=1)
 
@@ -1549,7 +1543,7 @@ def get_graph_data_polar_uncond_with_side_chains_angle_whole(cdr_type,file_path)
 
 def get_graph_data_polar_with_sidechains_angle(cdr_type,file_path,mask):
     
-    Ab_seq,Ab_euc_coord,Ag_seq,Ag_euc_coord = get_seq_and_coord(cdr_type,file_path)
+    Ab_seq,Ab_euc_coord,Ag_seq,Ag_euc_coord = get_seq_and_coord(cdr_type,file_path) # reader function to read the data file
     
     final_data = []
     for entry_number in range(len(Ab_seq)):
@@ -1584,6 +1578,7 @@ def get_graph_data_polar_with_sidechains_angle(cdr_type,file_path,mask):
             ag_hot_encoding.append(hot_encoder)
         
         
+         # Quaternion positional feature calculation for antibody, see the paper for exact equations
         
         ab_label_features = torch.tensor(ab_hot_encoding).view(antibody_cdr_len,20)
         all_coords = torch.from_numpy(antibody_euc_coord.reshape(len(antibody_seq),9))
@@ -1607,7 +1602,8 @@ def get_graph_data_polar_with_sidechains_angle(cdr_type,file_path,mask):
         
         
         antibody_pos_features = torch.cat((r_norm,mid_angle,normal_angle),dim=2).view(-1,9)
-        
+
+        # Additional feature included for the masking experiment, to mask some antigen residues, default: mask=0
         if mask == 0:
             ag_label_features = torch.tensor(ag_hot_encoding).view(len(antigen_seq),20)
             pos_antigen = np.array(antigen_euc_coord).reshape(len(antigen_euc_coord),3,3)
@@ -1624,7 +1620,9 @@ def get_graph_data_polar_with_sidechains_angle(cdr_type,file_path,mask):
                 ag_label_features[entry] = torch.tensor(float(1/20)*np.ones((1,20))).view(-1,20)
                 all_coords_ag[entry] = torch.from_numpy(np.mean(antigen_euc_coord.reshape(len(antigen_euc_coord),9),axis=0))
             
-            
+
+        # Quaternion positional feature calculation for antigen, see the paper for exact equations
+        
         ag_coords_forward_rolled = torch.roll(all_coords_ag,1,0)
         ag_diff_forward = all_coords_ag - ag_coords_forward_rolled
         
@@ -1671,10 +1669,9 @@ def get_graph_data_polar_with_sidechains_angle(cdr_type,file_path,mask):
         order_final = order_ab + order_ag
         final_edge_index = torch.tensor([edge_start,edge_end])
         
-        
-        
         Final_target_antibody_features = torch.cat([ab_label_features,antibody_pos_features],dim=1)
-        
+
+        # Initilialization for the system similar to MEAN (Kong et. al 2022)
         Input_ab_labels = torch.tensor(float(1/20)*np.ones((antibody_cdr_len,20))).view(-1,20)
         
         temp_coords = antibody_pos_features.view(-1,3,3)
@@ -1686,7 +1683,7 @@ def get_graph_data_polar_with_sidechains_angle(cdr_type,file_path,mask):
         Final_input_features = torch.cat([Final_input_anitbody_features,Final_input_antigen_features],dim=0)
         
         amino_index = torch.tensor([i for i in range(len(Final_input_features))]).view(-1,1).float()
-        #Final_target_features = 
+        
         
         data = Data(x=Final_input_features, edge_index=final_edge_index,edge_ab = edges_ab.view(-1,2), order = torch.tensor(order_final).view(-1,1),y=Final_target_antibody_features,antigen_labels=ag_label_features,antigen_pos=antigen_pos_features, ag_len= torch.tensor(len(antigen_seq)).view(-1,1),ab_len= torch.tensor(len(antibody_seq)-2).view(-1,1),a_index = amino_index.view(1,-1),first_res=first_coord)
                     
