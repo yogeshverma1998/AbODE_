@@ -15,9 +15,9 @@ Evaluation and pre-trained models.
 - tqdm
 - Biopython
 
-Make sure to have the correct version of each library as some errors might arise due to version-mismatch. The libraries-version of the local conda env are in `env_list.txt` 
+Make sure to have the correct version of each library as some errors might arise due to version-mismatch. The libraries-version of the local conda env is in `env_list.txt` 
 ## Datasets
-Datasets are placed in "data/" folder. Note that [Structural Antibody Dataset](https://opig.stats.ox.ac.uk/webapps/sabdab-sabpred/sabdab) is an evolutionaey dataset in which new structures are added each week. The model has been evaluated on a same specification as other competing methods in benchmarks.
+Datasets are placed in the "data/" folder. Note that [Structural Antibody Dataset](https://opig.stats.ox.ac.uk/webapps/sabdab-sabpred/sabdab) is an evolutionary dataset in which new structures are added each week. The model has been evaluated on the same specification as other competing methods in benchmarks.
 
 ## Evaluation:
 
